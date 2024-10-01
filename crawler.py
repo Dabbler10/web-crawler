@@ -80,7 +80,7 @@ class Crawler:
             full_url = urljoin(url, href)
 
             if validators.url(full_url) and full_url not in self._visited_urls and self._is_allowed_domain(full_url):
-                tasks.append((full_url, depth-1))
+                tasks.append((full_url, depth))
 
         return tasks
 
