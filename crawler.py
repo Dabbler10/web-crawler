@@ -23,13 +23,12 @@ def fetch(url):
 
 
 class Crawler:
-    def __init__(self, save_dir: str, saved_files: str, max_threads: int):
+    def __init__(self, save_dir: str, saved_urls: str, max_threads: int):
         self._allowed_domains = None
         self._start_url = None
         self._visited_urls = set()
-        self._saved_urls = set()
+        self._saved_urls = saved_urls
         self._save_dir = save_dir
-        self._saved_files = saved_files
         self._max_threads = max_threads
         self._robots_handler = RobotsHandler()
 
@@ -37,13 +36,13 @@ class Crawler:
             os.makedirs(save_dir)
 
     def _load_saved_urls(self):
-        if os.path.exists(self._saved_files):
-            with open(self._saved_files, 'r', encoding='utf-8') as f:
+        if os.path.exists(self._saved_urls):
+            with open(self._saved_urls, 'r', encoding='utf-8') as f:
                 return set(line.strip() for line in f)
         return set()
 
     def _add_saved_url(self, url):
-        with open(self._saved_files, 'a', encoding='utf-8') as f:
+        with open(self._saved_urls, 'a', encoding='utf-8') as f:
             f.write(url + "\n")
 
     def _is_allowed_domain(self, url):
@@ -98,6 +97,7 @@ class Crawler:
         self._saved_urls = self._load_saved_urls()
         self._start_url = start_url
         self._allowed_domains = allowed_domains
+        self._visited_urls = set()
 
         with ThreadPoolExecutor(max_workers=self._max_threads) as executor:
             futures = [executor.submit(self._crawl, start_url, depth)]
