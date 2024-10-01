@@ -1,15 +1,12 @@
+import pathlib
+
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
-import os
+import validators
 import hashlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from robots import RobotsHandler
-
-
-def is_valid_url(url):
-    parsed = urlparse(url)
-    return bool(parsed.netloc) and bool(parsed.scheme)
 
 
 def fetch(url):
@@ -23,28 +20,22 @@ def fetch(url):
 
 
 class Crawler:
-    def __init__(self, save_dir: str, file_for_urls: str, max_threads: int):
+    def __init__(self, save_dir: str, max_threads: int):
         self._allowed_domains = None
         self._start_url = None
         self._visited_urls = set()
-        self._saved_urls = set()
-        self._file_for_urls = file_for_urls
         self._save_dir = save_dir
         self._max_threads = max_threads
         self._robots_handler = RobotsHandler()
 
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
+        if not pathlib.Path(save_dir).exists():
+            pathlib.Path(self._save_dir).mkdir(parents=True, exist_ok=True)
 
-    def _load_saved_urls(self):
-        if os.path.exists(self._file_for_urls):
-            with open(self._file_for_urls, 'r', encoding='utf-8') as f:
-                return set(line.strip() for line in f)
-        return set()
 
-    def _add_saved_url(self, url):
-        with open(self._file_for_urls, 'a', encoding='utf-8') as f:
-            f.write(url + "\n")
+    def already_saved(self, url):
+        file_name = hashlib.md5(url.encode()).hexdigest() + ".html"
+        files = pathlib.Path(self._save_dir).iterdir()
+        return pathlib.Path(f"{self._save_dir}/{file_name}") in files
 
     def _is_allowed_domain(self, url):
         parsed_url = urlparse(url)
@@ -55,11 +46,11 @@ class Crawler:
 
     def _save_page(self, content, url):
         file_name = hashlib.md5(url.encode()).hexdigest() + ".html"
-        file_path = os.path.join(self._save_dir, file_name)
+        file = pathlib.Path(f"{self._save_dir}/{file_name}")
+        file.touch()
+        file.write_text(content, encoding="utf-8")
 
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        print(f"Страница сохранена: {file_path}")
+        print(f"Страница сохранена: {file.name}")
 
 
     def _crawl(self, url, depth=1):
@@ -77,9 +68,8 @@ class Crawler:
         if html is None:
             return
 
-        if url not in self._saved_urls:
+        if not self.already_saved(url):
             self._save_page(html, url)
-            self._add_saved_url(url)
 
         soup = BeautifulSoup(html, 'html.parser')
 
@@ -89,13 +79,12 @@ class Crawler:
             # Приводим относительные URL к полным
             full_url = urljoin(url, href)
 
-            if is_valid_url(full_url) and full_url not in self._visited_urls and self._is_allowed_domain(full_url):
-                tasks.append((full_url, depth))
+            if validators.url(full_url) and full_url not in self._visited_urls and self._is_allowed_domain(full_url):
+                tasks.append((full_url, depth-1))
 
         return tasks
 
     def start_crawl(self, start_url: str, allowed_domains: list[str], depth=2):
-        self._saved_urls = self._load_saved_urls()
         self._start_url = start_url
         self._allowed_domains = allowed_domains
         self._visited_urls = set()
