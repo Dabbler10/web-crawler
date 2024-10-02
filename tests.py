@@ -7,7 +7,7 @@ from crawler import Crawler
 def test_already_saved():
     with tempfile.TemporaryDirectory() as temp_dir:
         path_dir = pathlib.Path(temp_dir)
-        crawler = Crawler(path_dir, max_threads=8)
+        crawler = Crawler(path_dir, max_threads=2)
         url = "https://www.example.com/page"
         assert not crawler._already_saved(url)
 
@@ -20,7 +20,7 @@ def test_already_saved():
 def test_is_allowed_domain():
     with tempfile.TemporaryDirectory() as temp_dir:
         path_dir = pathlib.Path(temp_dir)
-        crawler = Crawler(path_dir, max_threads=8)
+        crawler = Crawler(path_dir, max_threads=2)
         crawler._allowed_domains = ["example.com"]
         assert crawler._is_allowed_domain("https://www.example.com/page")
         assert not crawler._is_allowed_domain("https://www.anotherexample.com/page")
@@ -30,7 +30,7 @@ def test_save_page():
     with tempfile.TemporaryDirectory() as temp_dir:
         path_dir = pathlib.Path(temp_dir)
 
-        crawler = Crawler(path_dir, max_threads=8)
+        crawler = Crawler(path_dir, max_threads=2)
         content = "<html><body><h1>Test Page</h1></body></html>"
         url = "https://www.example.com/page"
         file_name = path_dir.joinpath(hashlib.md5(url.encode()).hexdigest() + ".html")
@@ -48,7 +48,7 @@ def test_start_crawl():
         file = path_dir.joinpath(hashlib.md5(start_url.encode()).hexdigest() + ".html")
         fake_file = path_dir.joinpath("aboba.html")
 
-        crawler = Crawler(path_dir, max_threads=8)
+        crawler = Crawler(path_dir, max_threads=2)
         crawler.start_crawl(start_url, allowed_domains, depth=1)
 
         assert len(crawler._visited_urls) == 1
@@ -62,6 +62,6 @@ def test_robots():
         start_url = "https://ru.linkedin.com/"
         allowed_domains = ["ru.linkedin.com"]
 
-        crawler = Crawler(path_dir, max_threads=8)
+        crawler = Crawler(path_dir, max_threads=2)
         crawler.start_crawl(start_url, allowed_domains, depth=1)
         assert len(crawler._visited_urls) == 0
