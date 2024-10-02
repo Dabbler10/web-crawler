@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from robots import RobotsHandler
 
 
-def fetch(url: str):
+def fetch(url: str) -> str | None:
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -31,28 +31,28 @@ class Crawler:
             self._save_dir.mkdir(parents=True, exist_ok=True)
 
 
-    def already_saved(self, url: str):
+    def _already_saved(self, url: str) -> bool:
         file_name = hashlib.md5(url.encode()).hexdigest() + ".html"
         files = self._save_dir.iterdir()
         return pathlib.Path(f"{self._save_dir}/{file_name}") in files
 
-    def _is_allowed_domain(self, url: str):
+    def _is_allowed_domain(self, url: str) -> bool:
         parsed_url = urlparse(url)
         domain = parsed_url.netloc
         if domain.startswith("www."):
             domain = domain[4:]
         return domain in self._allowed_domains
 
-    def _save_page(self, content: str, url: str):
+    def _save_page(self, content: str, url: str) -> None:
         file_name = hashlib.md5(url.encode()).hexdigest() + ".html"
-        file = pathlib.Path(f"{self._save_dir}/{file_name}")
+        file = self._save_dir.joinpath(file_name)
         file.touch()
         file.write_text(content, encoding="utf-8")
 
         print(f"Страница сохранена: {file.name}")
 
 
-    def _crawl(self, url: str, depth=1):
+    def _crawl(self, url: str, depth=1) -> list[(str, int)]:
         if url in self._visited_urls or depth <= 0:
             return
 
@@ -67,7 +67,7 @@ class Crawler:
         if html is None:
             return
 
-        if not self.already_saved(url):
+        if not self._already_saved(url):
             self._save_page(html, url)
 
         soup = BeautifulSoup(html, 'html.parser')
@@ -83,7 +83,7 @@ class Crawler:
 
         return tasks
 
-    def start_crawl(self, start_url: str, allowed_domains: list[str], depth=2):
+    def start_crawl(self, start_url: str, allowed_domains: list[str], depth=2) -> None:
         self._start_url = start_url
         self._allowed_domains = allowed_domains
         self._visited_urls = set()

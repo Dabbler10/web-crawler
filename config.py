@@ -1,10 +1,11 @@
 from pathlib import Path
+from urllib.parse import urlparse
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     save_dir: Path
-    save_file: str
     start_url: str
     allowed_domains: list[str]
     max_threads: int
