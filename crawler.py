@@ -1,5 +1,4 @@
 import pathlib
-
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -9,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from robots import RobotsHandler
 
 
-def fetch(url):
+def fetch(url: str):
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -20,7 +19,7 @@ def fetch(url):
 
 
 class Crawler:
-    def __init__(self, save_dir: str, max_threads: int):
+    def __init__(self, save_dir: pathlib.Path, max_threads: int):
         self._allowed_domains = None
         self._start_url = None
         self._visited_urls = set()
@@ -28,23 +27,23 @@ class Crawler:
         self._max_threads = max_threads
         self._robots_handler = RobotsHandler()
 
-        if not pathlib.Path(save_dir).exists():
-            pathlib.Path(self._save_dir).mkdir(parents=True, exist_ok=True)
+        if not self._save_dir.exists():
+            self._save_dir.mkdir(parents=True, exist_ok=True)
 
 
-    def already_saved(self, url):
+    def already_saved(self, url: str):
         file_name = hashlib.md5(url.encode()).hexdigest() + ".html"
-        files = pathlib.Path(self._save_dir).iterdir()
+        files = self._save_dir.iterdir()
         return pathlib.Path(f"{self._save_dir}/{file_name}") in files
 
-    def _is_allowed_domain(self, url):
+    def _is_allowed_domain(self, url: str):
         parsed_url = urlparse(url)
         domain = parsed_url.netloc
         if domain.startswith("www."):
             domain = domain[4:]
         return domain in self._allowed_domains
 
-    def _save_page(self, content, url):
+    def _save_page(self, content: str, url: str):
         file_name = hashlib.md5(url.encode()).hexdigest() + ".html"
         file = pathlib.Path(f"{self._save_dir}/{file_name}")
         file.touch()
@@ -53,7 +52,7 @@ class Crawler:
         print(f"Страница сохранена: {file.name}")
 
 
-    def _crawl(self, url, depth=1):
+    def _crawl(self, url: str, depth=1):
         if url in self._visited_urls or depth <= 0:
             return
 
