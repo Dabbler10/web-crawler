@@ -38,8 +38,7 @@ class Crawler:
     def _is_allowed_domain(self, url: str) -> bool:
         parsed_url = urlparse(url)
         domain = parsed_url.netloc
-        if domain.startswith("www."):
-            domain = domain[4:]
+        domain = domain.removeprefix('www.')
         return domain in self._allowed_domains
 
     def _save_page(self, content: str, url: str) -> None:
@@ -51,14 +50,14 @@ class Crawler:
 
     def _update_page(self, content: str, url: str) -> None:
         file_name = hashlib.md5(url.encode()).hexdigest() + ".html"
-        file = self._save_dir.joinpath(file_name)
+        file = self._save_dir / file_name
         if file.read_text(encoding="utf-8") != content:
             file.write_text(content, encoding="utf-8")
             print(f"Страница обновлена: {file.name}")
 
     def _mirror_page(self, file: pathlib.Path) -> None:
         soup = BeautifulSoup(file.read_text(encoding="utf-8"), 'html.parser')
-        full_path = pathlib.Path.cwd().joinpath(self._save_dir)
+        full_path = self._save_dir.resolve()
         for a_tag in soup.find_all("a", href=True):
             href = a_tag.get("href")
             full_url = self._full_urls_dict.get(href)
