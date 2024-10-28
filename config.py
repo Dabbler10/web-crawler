@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     save_dir: Path
-    save_file: str
+    mirror_dir: Path
     start_url: str
     allowed_domains: list[str]
     max_threads: int

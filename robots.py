@@ -18,8 +18,8 @@ class RobotsHandler:
                 print(f"Ошибка при загрузке robots.txt для {domain}: {e}")
                 self.parsers[domain] = None
 
-        # Если robots.txt отсутствует или не смогли его загрузить, позволяем обход
+        # Если robots.txt отсутствует или не смогли его загрузить, запрещаем обход
         if self.parsers[domain] is None:
-            return True
+            return False
 
         return self.parsers[domain].can_fetch(user_agent, url)
